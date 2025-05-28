@@ -690,6 +690,119 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with TickerPr
                           ),
                         ),
 
+                        const SizedBox(height: 24),
+
+                        // Quantity Selector
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FBFF),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFF1976D2).withOpacity(0.2)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Jumlah Pesanan',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0D47A1),
+                                  fontFamily: 'Inter',
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  IconButton(
+                                    onPressed: () {
+                                      if (_quantity > 1) {
+                                        setState(() => _quantity--);
+                                      }
+                                    },
+                                    icon: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: _quantity > 1 
+                                            ? const Color(0xFF1976D2)
+                                            : Colors.grey[300],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        Icons.remove,
+                                        size: 20,
+                                        color: _quantity > 1 ? Colors.white : Colors.grey[600],
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: const Color(0xFF1976D2).withOpacity(0.2)),
+                                    ),
+                                    child: Text(
+                                      '$_quantity kg',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF0D47A1),
+                                        fontFamily: 'Inter',
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    onPressed: () {
+                                      if (_quantity < (widget.product['stok'] ?? 0)) {
+                                        setState(() => _quantity++);
+                                      }
+                                    },
+                                    icon: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: _quantity < (widget.product['stok'] ?? 0)
+                                            ? const Color(0xFF1976D2)
+                                            : Colors.grey[300],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        Icons.add,
+                                        size: 20,
+                                        color: _quantity < (widget.product['stok'] ?? 0)
+                                            ? Colors.white
+                                            : Colors.grey[600],
+                                      ),
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    'Tersedia: ${widget.product['stok']} kg',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                      fontFamily: 'Inter',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (_quantity >= (widget.product['stok'] ?? 0))
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    'Jumlah maksimum stok tercapai',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.orange[800],
+                                      fontFamily: 'Inter',
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+
                         const SizedBox(height: 32),
                       ],
                     ),
