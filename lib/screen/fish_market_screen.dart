@@ -178,7 +178,7 @@ class _FishMarketScreenState extends State<FishMarketScreen> with TickerProvider
                                 ),
                                 const SizedBox(height: 8),
                                 const Text(
-                                  'Ikan Segar Langsung dari Nelayan',
+                                  'Temukan berbagai jenis ikan segar dan berkualitas',
                                   style: TextStyle(
                                     fontFamily: 'Inter',
                                     fontSize: 14,
@@ -565,7 +565,7 @@ class ModernImageSlider extends StatelessWidget {
           _buildSliderCard(
             'https://images.unsplash.com/photo-1544943910-4c1dc44aab44?w=400',
             'Pasar Ikan Segar',
-            'Langsung dari nelayan lokal',
+            'Dapatkan ikan segar setiap hari',
           ),
           const SizedBox(width: 16),
           _buildSliderCard(

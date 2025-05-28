@@ -230,7 +230,7 @@ class _SignInScreenState extends State<SignInScreen> with TickerProviderStateMix
                                       ),
                                       SizedBox(height: isSmallScreen ? 4 : 8),
                                       Text(
-                                        'Ikan Segar Langsung dari Nelayan',
+                                        'Market Ikan Terpercaya',
                                         style: TextStyle(
                                           fontSize: isSmallScreen ? 12 : 16,
                                           color: Colors.white.withOpacity(0.9),

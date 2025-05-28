@@ -220,6 +220,38 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with TickerPr
     return [];
   }
 
+  Widget _buildSpecRow(String label, String value, {bool isHighlighted = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
+              fontFamily: 'Inter',
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Text(':'),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isHighlighted ? const Color(0xFF1976D2) : Colors.black87,
+                fontFamily: 'Inter',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -589,68 +621,69 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with TickerPr
 
                         const SizedBox(height: 24),
 
-                        // Quantity Selector
-                        const Text(
-                          'Jumlah Pembelian',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0D47A1),
-                            fontFamily: 'Inter',
-                          ),
-                        ),
-                        const SizedBox(height: 12),
+                        // Product Specifications
                         Container(
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF8FBFF),
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: const Color(0xFF1976D2).withOpacity(0.3),
-                            ),
+                            border: Border.all(color: const Color(0xFF1976D2).withOpacity(0.2)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Spesifikasi Produk',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0D47A1),
+                                  fontFamily: 'Inter',
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              _buildSpecRow('Kategori', widget.product['category']['nama']),
+                              _buildSpecRow('Jenis Ikan', widget.product['jenis_ikan']),
+                              _buildSpecRow('Spesies', widget.product['spesies_ikan']),
+                              _buildSpecRow('Berat', '${widget.product['berat']} kg'),
+                              _buildSpecRow('Stok', '${widget.product['stok']} kg'),
+                              if (widget.product['unggulan'])
+                                _buildSpecRow('Status', 'Produk Unggulan', isHighlighted: true),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Stock Information
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: widget.product['stok'] > 0 
+                                ? const Color(0xFFE8F5E9)
+                                : const Color(0xFFFFEBEE),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                           child: Row(
                             children: [
-                              Container(
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF1976D2),
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(16),
-                                    bottomLeft: Radius.circular(16),
-                                  ),
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(Icons.remove, color: Colors.white),
-                                  onPressed: _quantity > 1
-                                      ? () => setState(() => _quantity--)
-                                      : null,
-                                ),
+                              Icon(
+                                widget.product['stok'] > 0 ? Icons.check_circle : Icons.error,
+                                color: widget.product['stok'] > 0 
+                                    ? const Color(0xFF4CAF50)
+                                    : const Color(0xFFE53935),
                               ),
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  child: Text(
-                                    '$_quantity kg',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: isTablet ? 18 : 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF0D47A1),
-                                      fontFamily: 'Inter',
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF1976D2),
-                                  borderRadius: BorderRadius.only(
-                                    topRight: Radius.circular(16),
-                                    bottomRight: Radius.circular(16),
-                                  ),
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(Icons.add, color: Colors.white),
-                                  onPressed: () => setState(() => _quantity++),
+                              const SizedBox(width: 12),
+                              Text(
+                                widget.product['stok'] > 0 
+                                    ? 'Stok tersedia: ${widget.product['stok']} kg'
+                                    : 'Stok habis',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: widget.product['stok'] > 0 
+                                      ? const Color(0xFF2E7D32)
+                                      : const Color(0xFFE53935),
+                                  fontFamily: 'Inter',
                                 ),
                               ),
                             ],
