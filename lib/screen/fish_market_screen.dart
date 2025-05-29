@@ -251,6 +251,7 @@ class _FishMarketScreenState extends State<FishMarketScreen> with TickerProvider
                                 2,
                                 selectedCategoryId == 2,
                               ),
+                            
                             ],
                           ),
                         ),

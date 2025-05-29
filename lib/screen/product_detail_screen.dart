@@ -270,6 +270,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with TickerPr
             pinned: true,
             backgroundColor: const Color(0xFF1976D2),
             elevation: 0,
+            // Fix multiple heroes issue by providing unique hero tags
             leading: Container(
               margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -642,12 +643,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with TickerPr
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              _buildSpecRow('Kategori', widget.product['category']['nama']),
-                              _buildSpecRow('Jenis Ikan', widget.product['jenis_ikan']),
-                              _buildSpecRow('Spesies', widget.product['spesies_ikan']),
-                              _buildSpecRow('Berat', '${widget.product['berat']} kg'),
-                              _buildSpecRow('Stok', '${widget.product['stok']} kg'),
-                              if (widget.product['unggulan'])
+                              if (widget.product['category'] != null)
+                                _buildSpecRow('Kategori', widget.product['category']['nama'] ?? '-'),
+                              _buildSpecRow('Jenis Ikan', widget.product['jenis_ikan'] ?? '-'),
+                              _buildSpecRow('Spesies', widget.product['spesies_ikan'] ?? '-'),
+                              _buildSpecRow('Berat', '${widget.product['berat'] ?? 0} kg'),
+                              _buildSpecRow('Stok', '${widget.product['stok'] ?? 0} kg'),
+                              if (widget.product['unggulan'] == true)
                                 _buildSpecRow('Status', 'Produk Unggulan', isHighlighted: true),
                             ],
                           ),
@@ -659,7 +661,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with TickerPr
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: widget.product['stok'] > 0 
+                            color: (widget.product['stok'] ?? 0) > 0 
                                 ? const Color(0xFFE8F5E9)
                                 : const Color(0xFFFFEBEE),
                             borderRadius: BorderRadius.circular(16),
@@ -667,20 +669,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with TickerPr
                           child: Row(
                             children: [
                               Icon(
-                                widget.product['stok'] > 0 ? Icons.check_circle : Icons.error,
-                                color: widget.product['stok'] > 0 
+                                (widget.product['stok'] ?? 0) > 0 ? Icons.check_circle : Icons.error,
+                                color: (widget.product['stok'] ?? 0) > 0 
                                     ? const Color(0xFF4CAF50)
                                     : const Color(0xFFE53935),
                               ),
                               const SizedBox(width: 12),
                               Text(
-                                widget.product['stok'] > 0 
+                                (widget.product['stok'] ?? 0) > 0 
                                     ? 'Stok tersedia: ${widget.product['stok']} kg'
                                     : 'Stok habis',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: widget.product['stok'] > 0 
+                                  color: (widget.product['stok'] ?? 0) > 0 
                                       ? const Color(0xFF2E7D32)
                                       : const Color(0xFFE53935),
                                   fontFamily: 'Inter',
@@ -778,7 +780,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with TickerPr
                                   ),
                                   const Spacer(),
                                   Text(
-                                    'Tersedia: ${widget.product['stok']} kg',
+                                    'Tersedia: ${widget.product['stok'] ?? 0} kg',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: Colors.grey[600],
@@ -814,50 +816,104 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with TickerPr
         ],
       ),
 
-      // Floating Action Buttons
+      // Floating Action Buttons - Fixed to prevent overflow
       floatingActionButton: ScaleTransition(
         scale: _fabAnimation,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            const SizedBox(width: 32),
-            Expanded(
-              child: FloatingActionButton.extended(
-                onPressed: _isLoading ? null : addToCart,
-                backgroundColor: const Color(0xFF1976D2),
-                foregroundColor: Colors.white,
-                elevation: 8,
-                icon: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Icon(Icons.add_shopping_cart),
-                label: Text(
-                  _isLoading ? 'Menambahkan...' : 'Tambah ke Keranjang',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Inter',
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              // Main add to cart button
+              Expanded(
+                flex: 3,
+                child: Container(
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1976D2), Color(0xFF0D47A1)],
+                    ),
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF1976D2).withOpacity(0.4),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(28),
+                      onTap: _isLoading ? null : addToCart,
+                      child: Center(
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.add_shopping_cart,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _isLoading ? 'Loading...' : 'Tambah ke Keranjang',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'Inter',
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 16),
-            FloatingActionButton(
-              onPressed: () {
-                // Implementasi beli langsung
-                _showErrorSnackBar('Fitur beli langsung akan segera hadir');
-              },
-              backgroundColor: const Color(0xFF4CAF50),
-              foregroundColor: Colors.white,
-              elevation: 8,
-              child: const Icon(Icons.flash_on),
-            ),
-          ],
+              const SizedBox(width: 12),
+              // Quick buy button
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4CAF50),
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF4CAF50).withOpacity(0.4),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(28),
+                    onTap: () {
+                      _showErrorSnackBar('Fitur beli langsung akan segera hadir');
+                    },
+                    child: const Icon(
+                      Icons.flash_on,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,

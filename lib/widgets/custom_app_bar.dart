@@ -123,7 +123,7 @@ class CustomAppBar extends StatelessWidget {
 
           const SizedBox(width: 16),
 
-          // Tombol Notifikasi dengan badge
+          // Tombol Notifikasi dengan badge - Fixed hero tag
           _buildIconButton(
             icon: Icons.notifications_outlined,
             onTap: () {
@@ -135,11 +135,12 @@ class CustomAppBar extends StatelessWidget {
               );
             },
             hasBadge: true,
+            heroTag: "notification_button",
           ),
 
           const SizedBox(width: 12),
 
-          // Tombol Keranjang dengan badge
+          // Tombol Keranjang dengan badge - Fixed hero tag
           _buildIconButton(
             icon: Icons.shopping_cart_outlined,
             onTap: () {
@@ -151,6 +152,7 @@ class CustomAppBar extends StatelessWidget {
               );
             },
             hasBadge: false,
+            heroTag: "cart_button",
           ),
         ],
       ),
@@ -161,57 +163,61 @@ class CustomAppBar extends StatelessWidget {
     required IconData icon,
     required VoidCallback onTap,
     bool hasBadge = false,
+    required String heroTag,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.3),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+    return Hero(
+      tag: heroTag,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1,
             ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Center(
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 22,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-            ),
-            if (hasBadge)
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFF5722),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0x40FF5722),
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Center(
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                  size: 22,
                 ),
               ),
-          ],
+              if (hasBadge)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF5722),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0x40FF5722),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

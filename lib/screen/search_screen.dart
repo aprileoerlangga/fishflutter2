@@ -945,15 +945,16 @@ class ModernSearchResultItem extends StatelessWidget {
                               color: const Color(0xFF4CAF50).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Text(
-                              'Rp $price',
-                              style: TextStyle(
-                                color: const Color(0xFF2E7D32),
-                                fontFamily: 'Inter',
-                                fontSize: isTablet ? 16 : 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            // child: Text(
+                            //   'Rp $price',
+                            //   style: TextStyle(
+                            //     color: const Color(0xFF
+                            // 2E7D32),
+                            //     fontFamily: 'Inter',
+                            //     fontSize: isTablet ? 16 : 14,
+                            //     fontWeight: FontWeight.bold,
+                            //   ),
+                            // ),
                           ),
                           const Spacer(),
                           if (rating > 0) ...[

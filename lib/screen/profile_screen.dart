@@ -87,6 +87,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        
         setState(() {
           user = data['data']['user'];
           _isLoading = false;
@@ -1263,7 +1264,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               ),
               const SizedBox(height: 20),
               const Text(
-                'IwakMart adalah aplikasi marketplace yang menghubungkan Anda dengan penjual ikan segar terpercaya. Nikmati kemudahan berbelanja ikan segar berkualitas tinggi langsung dari nelayan lokal.',
+                'IwakMart adalah aplikasi marketplace yang menghubungkan Anda dengan penjual ikan segar terpercaya. Nikmati kemudahan berbelanja ikan segar berkualitas tinggi dengan cepat dan aman.',
                 style: TextStyle(fontSize: 14),
                 textAlign: TextAlign.justify,
               ),
