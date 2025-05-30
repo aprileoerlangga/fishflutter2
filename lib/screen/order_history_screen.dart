@@ -760,135 +760,149 @@ class OrderHistoryScreenState extends State<OrderHistoryScreen> with TickerProvi
   }
 
   Widget _buildEmptyState(bool isTablet) {
-    return Center(
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: Padding(
-          padding: EdgeInsets.all(isTablet ? 48 : 32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Animated floating receipt icon
-              AnimatedBuilder(
-                animation: _floatingAnimation,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(0, _floatingAnimation.value * 0.3),
-                    child: Container(
-                      width: isTablet ? 120 : 100,
-                      height: isTablet ? 120 : 100,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF1976D2), Color(0xFF0D47A1)],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.maxHeight,
+            ),
+            child: IntrinsicHeight(
+              child: Center(
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Padding(
+                    padding: EdgeInsets.all(isTablet ? 48 : 32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Animated floating receipt icon
+                        AnimatedBuilder(
+                          animation: _floatingAnimation,
+                          builder: (context, child) {
+                            return Transform.translate(
+                              offset: Offset(0, _floatingAnimation.value * 0.3),
+                              child: Container(
+                                width: isTablet ? 100 : 80,
+                                height: isTablet ? 100 : 80,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFF1976D2), Color(0xFF0D47A1)],
+                                  ),
+                                  borderRadius: BorderRadius.circular(40),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF1976D2).withOpacity(0.3),
+                                      blurRadius: 30,
+                                      offset: const Offset(0, 15),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  Icons.receipt_long_rounded,
+                                  size: isTablet ? 50 : 40,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                        borderRadius: BorderRadius.circular(60),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF1976D2).withOpacity(0.3),
-                            blurRadius: 30,
-                            offset: const Offset(0, 15),
+
+                        const SizedBox(height: 24),
+
+                        Text(
+                          selectedStatus != null 
+                              ? 'Belum ada pesanan dengan status ${_getStatusLabel(selectedStatus!)}'
+                              : 'Belum ada pesanan',
+                          style: TextStyle(
+                            fontSize: isTablet ? 20 : 18,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF0D47A1),
+                            fontFamily: 'Inter',
                           ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.receipt_long_rounded,
-                        size: isTablet ? 60 : 50,
-                        color: Colors.white,
-                      ),
-                    ),
-                  );
-                },
-              ),
+                          textAlign: TextAlign.center,
+                        ),
 
-              const SizedBox(height: 32),
+                        const SizedBox(height: 12),
 
-              Text(
-                selectedStatus != null 
-                    ? 'Belum ada pesanan dengan status ${_getStatusLabel(selectedStatus!)}'
-                    : 'Belum ada pesanan',
-                style: TextStyle(
-                  fontSize: isTablet ? 24 : 20,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF0D47A1),
-                  fontFamily: 'Inter',
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 16),
-
-              Text(
-                'Mulai berbelanja untuk melihat\nriwayat pesanan Anda di sini',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: isTablet ? 16 : 14,
-                  color: Colors.grey[600],
-                  fontFamily: 'Inter',
-                  height: 1.5,
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Modern action button
-              Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF1976D2), Color(0xFF0D47A1)],
-                  ),
-                  borderRadius: BorderRadius.circular(25),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF1976D2).withOpacity(0.4),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(25),
-                    onTap: () {
-                      Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        '/fish-market',
-                        (route) => false,
-                      );
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isTablet ? 32 : 24,
-                        vertical: isTablet ? 16 : 12,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.shopping_bag_rounded,
-                            color: Colors.white,
-                            size: 20,
+                        Text(
+                          'Mulai berbelanja untuk melihat\nriwayat pesanan Anda di sini',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: isTablet ? 16 : 14,
+                            color: Colors.grey[600],
+                            fontFamily: 'Inter',
+                            height: 1.5,
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Mulai Belanja',
-                            style: TextStyle(
-                              fontSize: isTablet ? 16 : 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              fontFamily: 'Inter',
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Modern action button
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF1976D2), Color(0xFF0D47A1)],
+                            ),
+                            borderRadius: BorderRadius.circular(25),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF1976D2).withOpacity(0.4),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(25),
+                              onTap: () {
+                                Navigator.pushNamedAndRemoveUntil(
+                                  context,
+                                  '/fish-market',
+                                  (route) => false,
+                                );
+                              },
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isTablet ? 32 : 24,
+                                  vertical: isTablet ? 16 : 12,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.shopping_bag_rounded,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Mulai Belanja',
+                                      style: TextStyle(
+                                        fontSize: isTablet ? 16 : 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        fontFamily: 'Inter',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
