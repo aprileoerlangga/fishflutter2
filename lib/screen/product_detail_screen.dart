@@ -6,9 +6,8 @@ import 'package:fishflutter/screen/utils/api_config.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Map<String, dynamic> product;
-  final int userId;
 
-  const ProductDetailScreen({super.key, required this.product, this.userId = 1});
+  const ProductDetailScreen({super.key, required this.product});
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
