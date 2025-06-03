@@ -92,6 +92,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> with TickerProvid
               orderItems = order['items'];
             } else if (order['order_items'] != null) {
               orderItems = order['order_items'];
+            } else if (order['detail_items'] != null) {
+              orderItems = order['detail_items'];
             }
             _isLoading = false;
           });
@@ -345,9 +347,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> with TickerProvid
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'Detail Pesanan',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -356,7 +358,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> with TickerProvid
                           ),
                           if (orderDetail != null)
                             Text(
-                              orderDetail!['nomor_pesanan'] ?? '',
+                              orderDetail!['nomor_pesanan'] ?? 'Order #${widget.orderId}',
                               style: const TextStyle(
                                 fontFamily: 'Inter',
                                 fontSize: 14,
@@ -401,7 +403,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> with TickerProvid
                                   const SizedBox(height: 16),
                                   
                                   // Shipping Address Card
-                                  if (orderDetail!['address'] != null)
+                                  if (orderDetail!['alamat'] != null || orderDetail!['address'] != null)
                                     _buildAddressCard(),
                                   
                                   const SizedBox(height: 16),
@@ -653,7 +655,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> with TickerProvid
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Pesanan ${orderDetail!['nomor_pesanan'] ?? ''}',
+                  'Pesanan ${orderDetail!['nomor_pesanan'] ?? 'Order #${widget.orderId}'}',
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 14,
@@ -712,8 +714,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> with TickerProvid
             ],
           ),
           const SizedBox(height: 16),
-          _buildInfoRow('Nomor Pesanan', orderDetail!['nomor_pesanan'] ?? '-'),
-          _buildInfoRow('Tanggal', _formatDateTime(orderDetail!['tanggal_pesan'])),
+          _buildInfoRow('Nomor Pesanan', orderDetail!['nomor_pesanan'] ?? 'Order #${widget.orderId}'),
+          _buildInfoRow('Tanggal', _formatDateTime(orderDetail!['created_at'] ?? orderDetail!['tanggal_pesan'])),
           _buildInfoRow('Status Pembayaran', 
             orderDetail!['status_pembayaran_label'] ?? 
             orderDetail!['status_pembayaran'] ?? '-'),
@@ -730,7 +732,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> with TickerProvid
   }
 
   Widget _buildAddressCard() {
-    final address = orderDetail!['address'];
+    final address = orderDetail!['alamat'] ?? orderDetail!['address'];
     
     return Container(
       padding: const EdgeInsets.all(20),
@@ -901,7 +903,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> with TickerProvid
             _formatPrice(orderDetail!['subtotal'])),
           _buildPriceRow('Ongkir', 
             orderDetail!['biaya_kirim_formatted'] ?? 
-            _formatPrice(orderDetail!['biaya_kirim'])),
+            _formatPrice(orderDetail!['biaya_kirim'] ?? orderDetail!['ongkir'])),
           if (orderDetail!['pajak'] != null && (orderDetail!['pajak'] ?? 0) > 0)
             _buildPriceRow('Pajak', 
               orderDetail!['pajak_formatted'] ?? 
@@ -953,12 +955,23 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> with TickerProvid
     );
   }
 
-  Widget _buildAddressInfo(Map<String, dynamic> address) {
+  Widget _buildAddressInfo(Map<String, dynamic>? address) {
+    if (address == null) {
+      return const Text(
+        'Alamat tidak tersedia',
+        style: TextStyle(
+          fontSize: 14,
+          color: Colors.grey,
+          fontStyle: FontStyle.italic,
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          address['nama_penerima'] ?? '-',
+          address['nama_penerima'] ?? address['nama'] ?? '-',
           style: const TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 16,
@@ -972,7 +985,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> with TickerProvid
             const Icon(Icons.phone, size: 16, color: Colors.grey),
             const SizedBox(width: 8),
             Text(
-              address['telepon'] ?? '-',
+              address['telepon'] ?? address['phone'] ?? '-',
               style: const TextStyle(
                 fontSize: 14,
                 fontFamily: 'Inter',
@@ -991,7 +1004,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> with TickerProvid
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    address['alamat_lengkap'] ?? '-',
+                    address['alamat_lengkap'] ?? address['alamat'] ?? '-',
                     style: const TextStyle(
                       fontSize: 14,
                       fontFamily: 'Inter',

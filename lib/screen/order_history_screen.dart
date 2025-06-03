@@ -94,6 +94,8 @@ class OrderHistoryScreenState extends State<OrderHistoryScreen> with TickerProvi
         url += '&status=$selectedStatus';
       }
       
+      print('🔄 Fetching orders from: $url');
+      
       final response = await http.get(
         ApiConfig.uri(url),
         headers: {
@@ -102,41 +104,56 @@ class OrderHistoryScreenState extends State<OrderHistoryScreen> with TickerProvi
         },
       );
 
+      print('📋 Orders Response: ${response.statusCode}');
+      print('📋 Orders Body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         
-        if (data['success'] == true) {
-          final responseData = data['data'] ?? {};
-          final newOrders = responseData['data'] ?? [];
-          final pagination = responseData['pagination'] ?? {};
-
-          setState(() {
-            if (isRefresh) {
-              orders = newOrders;
-            } else {
-              orders.addAll(newOrders);
-            }
+        List<dynamic> newOrders = [];
+        
+        // Handle different API response structures
+        if (data['success'] == true && data['data'] != null) {
+          final responseData = data['data'];
+          if (responseData is Map && responseData['data'] != null) {
+            newOrders = List<dynamic>.from(responseData['data']);
             
-            final currentPageFromApi = pagination['current_page'] ?? 1;
-            final totalPages = pagination['total_pages'] ?? 1;
+            // Handle pagination
+            final pagination = responseData['pagination'] ?? responseData;
+            final currentPageFromApi = pagination['current_page'] ?? pagination['page'] ?? 1;
+            final totalPages = pagination['total_pages'] ?? pagination['last_page'] ?? 1;
             hasMoreData = currentPageFromApi < totalPages;
             currentPage = currentPageFromApi + 1;
-            
-            _isLoading = false;
-            _isLoadingMore = false;
-          });
-          
+          } else if (responseData is List) {
+            newOrders = responseData;
+            hasMoreData = false; // No pagination info
+          }
+        } else if (data['data'] != null) {
+          if (data['data'] is List) {
+            newOrders = data['data'];
+            hasMoreData = false;
+          } else if (data['data'] is Map && data['data']['orders'] != null) {
+            newOrders = data['data']['orders'];
+            hasMoreData = false;
+          }
+        } else if (data is List) {
+          newOrders = data;
+          hasMoreData = false;
+        }
+
+        setState(() {
           if (isRefresh) {
-            _animationController.forward();
+            orders = newOrders;
+          } else {
+            orders.addAll(newOrders);
           }
-        } else {
-          setState(() {
-            _isLoading = false;
-            _isLoadingMore = false;
-          });
-          if (mounted) {
-            _showError(data['message'] ?? 'Gagal mengambil data');
-          }
+          
+          _isLoading = false;
+          _isLoadingMore = false;
+        });
+        
+        if (isRefresh) {
+          _animationController.forward();
         }
       } else {
         setState(() {
@@ -144,7 +161,7 @@ class OrderHistoryScreenState extends State<OrderHistoryScreen> with TickerProvi
           _isLoadingMore = false;
         });
         if (mounted) {
-          _showError('Gagal mengambil riwayat pesanan');
+          _showError('Gagal mengambil riwayat pesanan (${response.statusCode})');
         }
       }
     } catch (e) {
@@ -152,6 +169,7 @@ class OrderHistoryScreenState extends State<OrderHistoryScreen> with TickerProvi
         _isLoading = false;
         _isLoadingMore = false;
       });
+      print('❌ Fetch orders error: $e');
       if (mounted) {
         _showError('Terjadi kesalahan: $e');
       }
@@ -670,7 +688,7 @@ class OrderHistoryScreenState extends State<OrderHistoryScreen> with TickerProvi
                                     isTablet: isTablet,
                                     onCancel: () => _showCancelConfirmation(
                                       order['id'],
-                                      order['nomor_pesanan'] ?? 'Pesanan',
+                                      order['nomor_pesanan'] ?? 'Order #${order['id']}',
                                     ),
                                     onViewDetail: () => _showOrderDetail(order),
                                   );
@@ -994,7 +1012,7 @@ class ModernOrderCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        order['nomor_pesanan'] ?? 'Pesanan',
+                        order['nomor_pesanan'] ?? 'Order #${order['id']}',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: isTablet ? 18 : 16,
@@ -1003,7 +1021,7 @@ class ModernOrderCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        _formatDate(order['tanggal_pesan']),
+                        _formatDate(order['created_at'] ?? order['tanggal_pesan']),
                         style: TextStyle(
                           fontSize: isTablet ? 14 : 12,
                           color: Colors.grey[600],
@@ -1076,7 +1094,7 @@ class ModernOrderCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        order['total_formatted'] ?? 'Rp ${order['total'] ?? 0}',
+                        order['total_formatted'] ?? _formatPrice(order['total']),
                         style: TextStyle(
                           fontSize: isTablet ? 16 : 14,
                           fontWeight: FontWeight.bold,
@@ -1409,6 +1427,17 @@ class ModernOrderCard extends StatelessWidget {
       return '${date.day}/${date.month}/${date.year}';
     } catch (e) {
       return '-';
+    }
+  }
+
+  String _formatPrice(dynamic price) {
+    if (price == null) return 'Rp 0';
+    
+    try {
+      final priceValue = double.tryParse(price.toString()) ?? 0;
+      return 'Rp ${priceValue.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+    } catch (e) {
+      return 'Rp 0';
     }
   }
 }

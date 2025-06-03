@@ -6,6 +6,7 @@ import '../widgets/custom_app_bar.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'sign_in_screen.dart';
 import 'order_history_screen.dart';
+import 'order_detail_screen.dart';
 import 'address_management_screen.dart';
 import 'package:fishflutter/screen/utils/api_config.dart';
 
@@ -19,9 +20,11 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateMixin {
   Map<String, dynamic>? user;
   bool _isLoading = true;
+  List<dynamic> recentOrders = [];
   Map<String, int> orderStats = {
     'total': 0,
     'pending': 0,
+    'completed': 0,
     'cancelled': 0,
   };
 
@@ -89,11 +92,11 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         final data = json.decode(response.body);
         
         setState(() {
-          user = data['data']['user'];
+          user = data['data']['user'] ?? data['data'] ?? data;
           _isLoading = false;
         });
         
-        await prefs.setString('user', json.encode(data['data']['user']));
+        await prefs.setString('user', json.encode(user));
         _animationController.forward();
       } else {
         setState(() => _isLoading = false);
@@ -111,7 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       final token = prefs.getString('token') ?? '';
       
       final response = await http.get(
-        ApiConfig.uri('/api/orders'),
+        ApiConfig.uri('/api/orders?limit=5'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -120,16 +123,39 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final orders = data['data']['data'] ?? [];
+        
+        List<dynamic> orders = [];
+        if (data['success'] == true && data['data'] != null) {
+          if (data['data']['data'] != null) {
+            orders = data['data']['data'];
+          } else if (data['data'] is List) {
+            orders = data['data'];
+          }
+        } else if (data['data'] != null) {
+          orders = data['data'] is List ? data['data'] : [];
+        }
         
         int total = orders.length;
-        int pending = orders.where((order) => order['status'] == 'pending').length;
-        int cancelled = orders.where((order) => order['status'] == 'cancelled').length;
+        int pending = orders.where((order) => 
+          order['status']?.toString().toLowerCase() == 'pending' ||
+          order['status']?.toString().toLowerCase() == 'menunggu' ||
+          order['status']?.toString().toLowerCase() == 'diproses'
+        ).length;
+        int completed = orders.where((order) => 
+          order['status']?.toString().toLowerCase() == 'completed' ||
+          order['status']?.toString().toLowerCase() == 'selesai'
+        ).length;
+        int cancelled = orders.where((order) => 
+          order['status']?.toString().toLowerCase() == 'cancelled' ||
+          order['status']?.toString().toLowerCase() == 'dibatalkan'
+        ).length;
         
         setState(() {
+          recentOrders = orders.take(3).toList(); // Ambil 3 pesanan terbaru
           orderStats = {
             'total': total,
             'pending': pending,
+            'completed': completed,
             'cancelled': cancelled,
           };
         });
@@ -332,6 +358,15 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     }
   }
 
+  void _showOrderDetail(Map<String, dynamic> order) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OrderDetailScreen(orderId: order['id']),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -365,7 +400,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                   : user == null
                       ? const Center(child: Text('Tidak ada data profil'))
                       : RefreshIndicator(
-                          onRefresh: fetchProfile,
+                          onRefresh: () async {
+                            await fetchProfile();
+                            await fetchOrderStats();
+                          },
                           color: const Color(0xFF1976D2),
                           child: SingleChildScrollView(
                             physics: const AlwaysScrollableScrollPhysics(),
@@ -498,10 +536,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                                             const SizedBox(width: 12),
                                             Expanded(
                                               child: _buildStatCard(
-                                                'Dibatalkan',
-                                                orderStats['cancelled'].toString(),
-                                                Icons.cancel,
-                                                const Color(0xFFD32F2F),
+                                                'Selesai',
+                                                orderStats['completed'].toString(),
+                                                Icons.check_circle,
+                                                const Color(0xFF2E7D32),
                                               ),
                                             ),
                                           ],
@@ -510,6 +548,51 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                                     );
                                   },
                                 ),
+
+                                const SizedBox(height: 24),
+
+                                // Recent Orders Section
+                                if (recentOrders.isNotEmpty)
+                                  FadeTransition(
+                                    opacity: _fadeAnimation,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              const Text(
+                                                'Pesanan Terbaru',
+                                                style: TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Color(0xFF0D47A1),
+                                                  fontFamily: 'Inter',
+                                                ),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) => const OrderHistoryScreen(),
+                                                    ),
+                                                  );
+                                                },
+                                                child: const Text('Lihat Semua'),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 12),
+                                          ...recentOrders.map((order) => 
+                                            _buildRecentOrderCard(order)
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
 
                                 const SizedBox(height: 24),
 
@@ -680,6 +763,104 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     );
   }
 
+  Widget _buildRecentOrderCard(Map<String, dynamic> order) {
+    final status = order['status'] ?? 'pending';
+    final statusLabel = _getStatusText(status);
+    final statusColor = _getStatusColor(status);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: statusColor.withOpacity(0.3),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () => _showOrderDetail(order),
+        borderRadius: BorderRadius.circular(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                _getStatusIcon(status),
+                color: statusColor,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    order['nomor_pesanan'] ?? 'Order #${order['id']}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Color(0xFF0D47A1),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _formatPrice(order['total']),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF4CAF50),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    statusLabel,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _formatDate(order['created_at']),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -809,6 +990,104 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
         ),
       ),
     );
+  }
+
+  // Helper methods for status handling
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+      case 'menunggu':
+        return const Color(0xFFFF9800);
+      case 'paid':
+      case 'dibayar':
+        return const Color(0xFF2196F3);
+      case 'processing':
+      case 'diproses':
+        return const Color(0xFF9C27B0);
+      case 'shipped':
+      case 'dikirim':
+        return const Color(0xFF607D8B);
+      case 'completed':
+      case 'selesai':
+        return const Color(0xFF4CAF50);
+      case 'cancelled':
+      case 'dibatalkan':
+        return const Color(0xFFD32F2F);
+      default:
+        return const Color(0xFF9E9E9E);
+    }
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+      case 'menunggu':
+        return Icons.access_time_rounded;
+      case 'paid':
+      case 'dibayar':
+        return Icons.payment_rounded;
+      case 'processing':
+      case 'diproses':
+        return Icons.build_rounded;
+      case 'shipped':
+      case 'dikirim':
+        return Icons.local_shipping_rounded;
+      case 'completed':
+      case 'selesai':
+        return Icons.check_circle_rounded;
+      case 'cancelled':
+      case 'dibatalkan':
+        return Icons.cancel_rounded;
+      default:
+        return Icons.info_rounded;
+    }
+  }
+
+  String _getStatusText(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+      case 'menunggu':
+        return 'Menunggu';
+      case 'paid':
+      case 'dibayar':
+        return 'Dibayar';
+      case 'processing':
+      case 'diproses':
+        return 'Diproses';
+      case 'shipped':
+      case 'dikirim':
+        return 'Dikirim';
+      case 'completed':
+      case 'selesai':
+        return 'Selesai';
+      case 'cancelled':
+      case 'dibatalkan':
+        return 'Dibatalkan';
+      default:
+        return status;
+    }
+  }
+
+  String _formatPrice(dynamic price) {
+    if (price == null) return 'Rp 0';
+    
+    try {
+      final priceValue = double.tryParse(price.toString()) ?? 0;
+      return 'Rp ${priceValue.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+    } catch (e) {
+      return 'Rp 0';
+    }
+  }
+
+  String _formatDate(String? dateString) {
+    if (dateString == null) return '-';
+    
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (e) {
+      return '-';
+    }
   }
 
   void _showNotificationSettings() {
@@ -1298,63 +1577,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 8),
-              const Row(
-                children: [
-                  Icon(Icons.code, color: Color(0xFF1976D2), size: 16),
-                  SizedBox(width: 8),
-                  Text(
-                    'Developer: Tim IwakMart',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              const Row(
-                children: [
-                  Icon(Icons.calendar_today, color: Color(0xFF1976D2), size: 16),
-                  SizedBox(width: 8),
-                  Text(
-                    'Rilis: Mei 2025',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              const Row(
-                children: [
-                  Icon(Icons.info, color: Color(0xFF1976D2), size: 16),
-                  SizedBox(width: 8),
-                  Text(
-                    'Build: 1.0.0+1',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildActionButton(
-                    'Privacy Policy',
-                    Icons.privacy_tip,
-                    () {
-                      Navigator.pop(context);
-                      _showPrivacyPolicy();
-                    },
-                  ),
-                  _buildActionButton(
-                    'Terms of Use',
-                    Icons.description,
-                    () {
-                      Navigator.pop(context);
-                      _showTermsOfUse();
-                    },
-                  ),
-                ],
-              ),
             ],
           ),
         ),
@@ -1369,120 +1591,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               ),
             ),
             child: const Text('Tutup'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton(String text, IconData icon, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFF1976D2).withOpacity(0.3)),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: const Color(0xFF1976D2), size: 20),
-            const SizedBox(height: 4),
-            Text(
-              text,
-              style: const TextStyle(
-                fontSize: 10,
-                color: Color(0xFF1976D2),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showPrivacyPolicy() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.privacy_tip, color: Color(0xFF1976D2)),
-            SizedBox(width: 8),
-            Text('Kebijakan Privasi'),
-          ],
-        ),
-        content: const SingleChildScrollView(
-          child: Text(
-            'Kebijakan Privasi IwakMart\n\n'
-            '1. Informasi yang Kami Kumpulkan\n'
-            'Kami mengumpulkan informasi yang Anda berikan secara langsung, seperti nama, email, nomor telepon, dan alamat pengiriman.\n\n'
-            '2. Penggunaan Informasi\n'
-            'Informasi Anda digunakan untuk memproses pesanan, mengirimkan produk, dan memberikan layanan pelanggan terbaik.\n\n'
-            '3. Keamanan Data\n'
-            'Kami menggunakan enkripsi dan langkah-langkah keamanan terbaik untuk melindungi data pribadi Anda.\n\n'
-            '4. Berbagi Informasi\n'
-            'Kami tidak akan membagikan informasi pribadi Anda kepada pihak ketiga tanpa persetujuan Anda.\n\n'
-            '5. Kontak\n'
-            'Jika Anda memiliki pertanyaan tentang kebijakan privasi ini, hubungi kami di support@iwakmart.com',
-            style: TextStyle(fontSize: 14),
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1976D2),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Mengerti'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showTermsOfUse() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.description, color: Color(0xFF1976D2)),
-            SizedBox(width: 8),
-            Text('Syarat dan Ketentuan'),
-          ],
-        ),
-        content: const SingleChildScrollView(
-          child: Text(
-            'Syarat dan Ketentuan Penggunaan IwakMart\n\n'
-            '1. Penerimaan Syarat\n'
-            'Dengan menggunakan aplikasi IwakMart, Anda menyetujui syarat dan ketentuan ini.\n\n'
-            '2. Penggunaan Layanan\n'
-            'Anda bertanggung jawab untuk menggunakan layanan ini dengan cara yang sah dan sesuai.\n\n'
-            '3. Akun Pengguna\n'
-            'Anda bertanggung jawab menjaga kerahasiaan akun dan password Anda.\n\n'
-            '4. Pemesanan dan Pembayaran\n'
-            'Semua pesanan tunduk pada ketersediaan produk dan konfirmasi pembayaran.\n\n'
-            '5. Pembatalan dan Pengembalian\n'
-            'Pembatalan dapat dilakukan sebelum produk dikirim. Pengembalian dana mengikuti kebijakan yang berlaku.\n\n'
-            '6. Perubahan Syarat\n'
-            'Kami berhak mengubah syarat dan ketentuan ini sewaktu-waktu.',
-            style: TextStyle(fontSize: 14),
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1976D2),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Setuju'),
           ),
         ],
       ),
